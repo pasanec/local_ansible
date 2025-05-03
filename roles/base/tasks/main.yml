@@ -1,0 +1,14 @@
+- name: Install base dependencies
+  apt:
+    name:
+      - ripgrep
+      - batcat
+      - git
+      - php
+      - zip
+      - unzip
+      - build-essential
+      - make
+      - curl
+    state: latest
+  when: ansible_distribution == "Ubuntu"

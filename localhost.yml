@@ -1,0 +1,21 @@
+---
+- hosts: all
+  become: true
+  pre_tasks:
+
+    - name: update repo index
+      tags: always
+      apt:
+        update_cache: yes
+      changed_when: false
+
+    - name: Install role at specific path
+      community.general.ansible_galaxy_install:
+        type: role
+        name: andrewrothstein.opam     
+
+- hosts: all
+  become: true
+  roles:
+    - base
+    - andrewrothstein.opam
