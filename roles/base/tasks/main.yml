@@ -13,3 +13,57 @@
       - curl
     state: latest
   when: ansible_distribution == "Ubuntu"
+
+- name: Add neovim ppa
+  apt_repository:
+    repo: ppa:neovim-ppa/stable
+    state: present
+
+- name: Install neovim
+  apt:
+    name:
+      - neovim
+    state: latest
+
+- name: clone neovim configuration
+  become: false
+  ansible.builtin.git:
+    repo: 'https://github.com/pasanec/kickstart.nvim.git'
+    dest: ~/.config/nvim
+    version: ijp
+
+- name: Create intelephense directory
+  become: false
+  ansible.builtin.file:
+    path: ~/intelephense
+    state: directory
+    mode: '0755'
+
+- name: Copy intelephense activation key
+  become: false
+  ansible.builtin.copy:
+    content: "{{ intelephense_activation_key }}"
+    dest: ~/intelephense/licence.txt
+    mode: '0600'
+
+- name: Install nvm
+  become: false
+  ansible.builtin.shell:
+    cmd: "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash"
+    creates: ~/.nvm/nvm.sh
+
+- name: Install latest stable npm
+  become: false
+  ansible.builtin.shell:
+    cmd: "source ~/.nvm/nvm.sh && nvm install --lts"
+    creates: ~/.nvm/versions/node
+
+- name: Install pip
+  apt:
+    name: python3-pip
+    state: present
+
+- name: Install Gemini CLI
+  pip:
+    name: google-generativeai
+    state: present

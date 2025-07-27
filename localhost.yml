@@ -12,7 +12,7 @@
     - name: Install role at specific path
       community.general.ansible_galaxy_install:
         type: role
-        name: andrewrothstein.opam     
+        name: andrewrothstein.opam
 
 - hosts: all
   become: true
