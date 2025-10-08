@@ -14,17 +14,49 @@
     state: latest
   when: ansible_distribution == "Ubuntu"
 
-- name: Add neovim PPA
-  apt_repository:
-    repo: ppa:neovim-ppa/stable
-    state: present
-    update_cache: yes
-
-- name: Install neovim from PPA
+- name: Remove old neovim installations
   apt:
-    name:
-      - neovim
-    state: latest
+    name: neovim
+    state: absent
+  ignore_errors: yes
+
+- name: Remove old neovim PPA repositories
+  apt_repository:
+    repo: "{{ item }}"
+    state: absent
+  loop:
+    - ppa:neovim-ppa/stable
+    - ppa:neovim-ppa/unstable
+  ignore_errors: yes
+
+- name: Remove old neovim installation directory
+  ansible.builtin.file:
+    path: /opt/nvim-linux64
+    state: absent
+
+- name: Download neovim tarball
+  ansible.builtin.get_url:
+    url: https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz
+    dest: /tmp/nvim-linux64.tar.gz
+    mode: '0644'
+
+- name: Extract neovim to /opt
+  ansible.builtin.unarchive:
+    src: /tmp/nvim-linux64.tar.gz
+    dest: /opt
+    remote_src: yes
+
+- name: Create symlink for nvim
+  ansible.builtin.file:
+    src: /opt/nvim-linux64/bin/nvim
+    dest: /usr/local/bin/nvim
+    state: link
+    force: yes
+
+- name: Clean up tarball
+  ansible.builtin.file:
+    path: /tmp/nvim-linux64.tar.gz
+    state: absent
 
 - name: Initialize opam
   become: false
