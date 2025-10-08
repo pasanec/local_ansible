@@ -110,3 +110,82 @@
   ansible.builtin.shell:
     cmd: "~/.local/bin/uv tool install specify-cli --from git+https://github.com/github/spec-kit.git"
     creates: ~/.local/share/uv/tools/specify-cli
+
+- name: Check if running in WSL
+  ansible.builtin.shell:
+    cmd: "grep -qi microsoft /proc/version && echo 'true' || echo 'false'"
+  register: is_wsl
+  changed_when: false
+
+- name: Enable systemd in WSL (if WSL detected)
+  become: false
+  ansible.builtin.lineinfile:
+    path: /etc/wsl.conf
+    line: |
+      [boot]
+      systemd=true
+    create: yes
+    mode: '0644'
+  when: is_wsl.stdout == 'true'
+  become: yes
+
+- name: Notify user about WSL restart requirement
+  ansible.builtin.debug:
+    msg: "WSL detected - systemd has been enabled. You need to restart WSL (run 'wsl --shutdown' from Windows) for Docker to work properly."
+  when: is_wsl.stdout == 'true'
+
+- name: Install Docker prerequisites
+  apt:
+    name:
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+    state: present
+    update_cache: yes
+
+- name: Create Docker GPG keyring directory
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Add Docker GPG key
+  ansible.builtin.shell:
+    cmd: "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg"
+    creates: /etc/apt/keyrings/docker.gpg
+
+- name: Set Docker GPG key permissions
+  ansible.builtin.file:
+    path: /etc/apt/keyrings/docker.gpg
+    mode: '0644'
+
+- name: Add Docker repository
+  apt_repository:
+    repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    state: present
+    filename: docker
+
+- name: Install Docker
+  apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    state: latest
+    update_cache: yes
+
+- name: Add user to docker group
+  ansible.builtin.user:
+    name: "{{ ansible_user_id }}"
+    groups: docker
+    append: yes
+
+- name: Ensure Docker service is enabled and started (skip in WSL)
+  ansible.builtin.systemd:
+    name: docker
+    enabled: yes
+    state: started
+  when: is_wsl.stdout == 'false'
