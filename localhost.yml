@@ -15,11 +15,11 @@
       args:
         creates: ~/.ansible/collections/ansible_collections/community/general
 
-    - name: Install Galaxy roles from requirements (including andrewrothstein.opam)
-      community.general.ansible_galaxy_install:
-        type: role
-        name: andrewrothstein.opam
-        dest: "{{ playbook_dir }}/roles"
+    - name: Install required roles from requirements.yml
+      ansible.builtin.command: ansible-galaxy install -r requirements.yml -p roles
+      args:
+        chdir: "{{ playbook_dir }}"
+      tags: always
 
   roles:
     - base
