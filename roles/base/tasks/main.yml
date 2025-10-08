@@ -26,6 +26,28 @@
       - neovim
     state: latest
 
+- name: Initialize opam
+  become: false
+  ansible.builtin.shell:
+    cmd: "opam init --disable-sandboxing -y"
+    creates: ~/.opam/config
+  register: opam_init
+  failed_when: false
+
+- name: Install dune via opam
+  become: false
+  ansible.builtin.shell:
+    cmd: "eval $(opam env) && opam install dune -y"
+    creates: ~/.opam/default/bin/dune
+  when: opam_init is succeeded or opam_init is skipped
+
+- name: Add opam environment to bashrc
+  become: false
+  ansible.builtin.lineinfile:
+    path: ~/.bashrc
+    line: 'eval $(opam env)'
+    create: yes
+
 - name: clone neovim configuration
   become: false
   ansible.builtin.git:
