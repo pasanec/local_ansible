@@ -279,6 +279,15 @@
     - desktop_check.stdout != ''
   changed_when: false
 
+- name: Install psutil for dconf module
+  apt:
+    name: python3-psutil
+    state: present
+  when: 
+    - is_wsl.stdout == 'false'
+    - desktop_check.stdout != ''
+    - "'GNOME' in desktop_check.stdout or 'ubuntu' in desktop_check.stdout"
+
 - name: Set JetBrains Mono as GNOME Terminal font
   become: false
   community.general.dconf:
