@@ -263,22 +263,6 @@
     - is_wsl.stdout == 'false'
     - desktop_check.stdout != ''
 
-- name: Install JetBrains Mono font
-  apt:
-    name: fonts-jetbrains-mono
-    state: present
-  when: 
-    - is_wsl.stdout == 'false'
-    - desktop_check.stdout != ''
-
-- name: Update font cache
-  ansible.builtin.shell:
-    cmd: "fc-cache -f -v"
-  when: 
-    - is_wsl.stdout == 'false'
-    - desktop_check.stdout != ''
-  changed_when: false
-
 - name: Install psutil for dconf module
   apt:
     name: python3-psutil
@@ -287,34 +271,6 @@
     - is_wsl.stdout == 'false'
     - desktop_check.stdout != ''
     - "'GNOME' in desktop_check.stdout or 'ubuntu' in desktop_check.stdout"
-
-- name: Set JetBrains Mono as GNOME Terminal font
-  become: false
-  community.general.dconf:
-    key: "/org/gnome/terminal/legacy/profiles:/:{{ gnome_terminal_profile_id }}/font"
-    value: "'JetBrains Mono NL 11'"
-    state: present
-  vars:
-    gnome_terminal_profile_id: "{{ lookup('pipe', 'gsettings get org.gnome.Terminal.ProfilesList default | tr -d \"\\047\"') }}"
-  when: 
-    - is_wsl.stdout == 'false'
-    - desktop_check.stdout != ''
-    - "'GNOME' in desktop_check.stdout or 'ubuntu' in desktop_check.stdout"
-  ignore_errors: yes
-
-- name: Enable custom font in GNOME Terminal
-  become: false
-  community.general.dconf:
-    key: "/org/gnome/terminal/legacy/profiles:/:{{ gnome_terminal_profile_id }}/use-system-font"
-    value: "false"
-    state: present
-  vars:
-    gnome_terminal_profile_id: "{{ lookup('pipe', 'gsettings get org.gnome.Terminal.ProfilesList default | tr -d \"\\047\"') }}"
-  when: 
-    - is_wsl.stdout == 'false'
-    - desktop_check.stdout != ''
-    - "'GNOME' in desktop_check.stdout or 'ubuntu' in desktop_check.stdout"
-  ignore_errors: yes
 
 - name: Remap Caps Lock to Escape in GNOME (for Ubuntu Desktop)
   become: false
