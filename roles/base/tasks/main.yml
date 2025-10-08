@@ -93,11 +93,25 @@
     state: latest
     update_cache: yes
 
-- name: Install GitHub Copilot CLI extension
+- name: Check if GitHub CLI is authenticated
+  become: false
+  ansible.builtin.shell:
+    cmd: "gh auth status"
+  register: gh_auth_check
+  changed_when: false
+  failed_when: false
+
+- name: Install GitHub Copilot CLI extension (if authenticated)
   become: false
   ansible.builtin.shell:
     cmd: "gh extension install github/gh-copilot"
     creates: ~/.local/share/gh/extensions/gh-copilot
+  when: gh_auth_check.rc == 0
+
+- name: Notify about skipped GitHub Copilot CLI installation
+  ansible.builtin.debug:
+    msg: "GitHub CLI is not authenticated. Skipping Copilot CLI extension. After running 'gh auth login', install with: gh extension install github/gh-copilot"
+  when: gh_auth_check.rc != 0
 
 - name: Install uv (Python package manager)
   become: false
