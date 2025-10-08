@@ -58,6 +58,7 @@
   ansible.builtin.shell:
     cmd: "source ~/.nvm/nvm.sh && nvm install --lts"
     creates: ~/.nvm/versions/node
+    executable: /bin/bash
 
 - name: Install pip
   apt:
