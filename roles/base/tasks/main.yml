@@ -74,3 +74,39 @@
     cmd: "source ~/.nvm/nvm.sh && npm install -g @google/gemini-cli"
     creates: ~/.nvm/versions/node/*/bin/gemini
     executable: /bin/bash
+
+- name: Add GitHub CLI repository key
+  apt_key:
+    url: https://cli.github.com/packages/githubcli-archive-keyring.gpg
+    state: present
+    keyring: /usr/share/keyrings/githubcli-archive-keyring.gpg
+
+- name: Add GitHub CLI repository
+  apt_repository:
+    repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main"
+    state: present
+    filename: github-cli
+
+- name: Install GitHub CLI
+  apt:
+    name: gh
+    state: latest
+    update_cache: yes
+
+- name: Install GitHub Copilot CLI extension
+  become: false
+  ansible.builtin.shell:
+    cmd: "gh extension install github/gh-copilot"
+    creates: ~/.local/share/gh/extensions/gh-copilot
+
+- name: Install uv (Python package manager)
+  become: false
+  ansible.builtin.shell:
+    cmd: "curl -LsSf https://astral.sh/uv/install.sh | sh"
+    creates: ~/.local/bin/uv
+
+- name: Install Spec Kit CLI
+  become: false
+  ansible.builtin.shell:
+    cmd: "~/.local/bin/uv tool install specify-cli --from git+https://github.com/github/spec-kit.git"
+    creates: ~/.local/share/uv/tools/specify-cli
