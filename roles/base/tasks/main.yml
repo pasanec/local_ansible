@@ -14,29 +14,19 @@
     state: latest
   when: ansible_distribution == "Ubuntu"
 
-- name: Create keyrings directory
-  file:
-    path: /etc/apt/keyrings
-    state: directory
-    mode: '0755'
-
-- name: Add neovim ppa signing key
-  get_url:
-    url: https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x9DBB0BE9366964F134855E2F1BC4B5ABEB84A93A
-    dest: /etc/apt/keyrings/neovim-ppa.asc
-    mode: '0644'
-
-- name: Add neovim ppa repository
-  apt_repository:
-    repo: "deb [signed-by=/etc/apt/keyrings/neovim-ppa.asc] https://ppa.launchpadcontent.net/neovim-ppa/stable/ubuntu {{ ansible_distribution_release }} main"
-    state: present
-    filename: neovim-ppa
-
-- name: Install neovim
+- name: Install neovim from default repositories
   apt:
     name:
       - neovim
     state: latest
+  ignore_errors: true
+  register: neovim_apt_result
+
+- name: Install neovim via snap if apt failed
+  snap:
+    name: nvim
+    classic: true
+  when: neovim_apt_result is failed
 
 - name: clone neovim configuration
   become: false
