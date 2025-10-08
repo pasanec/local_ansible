@@ -1,3 +1,18 @@
+- name: Check if running in WSL
+  ansible.builtin.shell:
+    cmd: "grep -qi microsoft /proc/version && echo 'true' || echo 'false'"
+  register: is_wsl
+  changed_when: false
+
+- name: Check if desktop environment is installed
+  ansible.builtin.shell:
+    cmd: "echo $XDG_CURRENT_DESKTOP"
+  environment:
+    XDG_CURRENT_DESKTOP: "{{ ansible_env.XDG_CURRENT_DESKTOP | default('') }}"
+  register: desktop_check
+  changed_when: false
+  become: false
+
 - name: Install base dependencies
   apt:
     name:
@@ -161,12 +176,6 @@
     cmd: "~/.local/bin/uv tool install specify-cli --from git+https://github.com/github/spec-kit.git"
     creates: ~/.local/share/uv/tools/specify-cli
 
-- name: Check if running in WSL
-  ansible.builtin.shell:
-    cmd: "grep -qi microsoft /proc/version && echo 'true' || echo 'false'"
-  register: is_wsl
-  changed_when: false
-
 - name: Enable systemd in WSL (if WSL detected)
   become: false
   ansible.builtin.lineinfile:
@@ -238,15 +247,6 @@
     enabled: yes
     state: started
   when: is_wsl.stdout == 'false'
-
-- name: Check if desktop environment is installed
-  ansible.builtin.shell:
-    cmd: "echo $XDG_CURRENT_DESKTOP"
-  environment:
-    XDG_CURRENT_DESKTOP: "{{ ansible_env.XDG_CURRENT_DESKTOP | default('') }}"
-  register: desktop_check
-  changed_when: false
-  become: false
 
 - name: Download Google Chrome
   ansible.builtin.get_url:
