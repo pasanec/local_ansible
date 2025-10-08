@@ -292,7 +292,7 @@
   become: false
   community.general.dconf:
     key: "/org/gnome/terminal/legacy/profiles:/:{{ gnome_terminal_profile_id }}/font"
-    value: "'JetBrains Mono 11'"
+    value: "'JetBrains Mono NL 11'"
     state: present
   vars:
     gnome_terminal_profile_id: "{{ lookup('pipe', 'gsettings get org.gnome.Terminal.ProfilesList default | tr -d \"\\047\"') }}"
