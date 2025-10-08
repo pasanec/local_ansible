@@ -30,12 +30,28 @@
     state: latest
   when: ansible_distribution == "Ubuntu"
 
-- name: Install Grip markdown viewer (Ubuntu Desktop only)
+- name: Install pipx for isolated Python applications (Ubuntu Desktop only)
+  apt:
+    name: pipx
+    state: present
+  when:
+    - is_wsl.stdout == 'false'
+    - desktop_check.stdout != ''
+
+- name: Ensure pipx path
   become: false
-  ansible.builtin.pip:
+  ansible.builtin.command: pipx ensurepath
+  register: pipx_ensurepath
+  changed_when: "'already in PATH' not in pipx_ensurepath.stdout"
+  when:
+    - is_wsl.stdout == 'false'
+    - desktop_check.stdout != ''
+
+- name: Install Grip markdown viewer via pipx (Ubuntu Desktop only)
+  become: false
+  community.general.pipx:
     name: grip
     state: present
-    extra_args: --user --break-system-packages
   when:
     - is_wsl.stdout == 'false'
     - desktop_check.stdout != ''
