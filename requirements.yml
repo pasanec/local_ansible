@@ -1,2 +1,4 @@
 # requirements.yml
+---
 - src: andrewrothstein.opam
+  version: master

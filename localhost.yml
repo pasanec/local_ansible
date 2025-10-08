@@ -14,13 +14,51 @@
       ansible.builtin.command: ansible-galaxy collection install community.general
       args:
         creates: ~/.ansible/collections/ansible_collections/community/general
+      ignore_errors: true
 
-    - name: Install required roles from requirements.yml
-      ansible.builtin.command: ansible-galaxy install -r requirements.yml -p roles
-      args:
-        chdir: "{{ playbook_dir }}"
-      tags: always
+    - name: Create roles directory if it doesn't exist
+      ansible.builtin.file:
+        path: "{{ playbook_dir }}/roles"
+        state: directory
+        mode: '0755'
 
-  roles:
-    - base
-    - andrewrothstein.opam
+    - name: Install required roles from requirements.yml with retry
+      block:
+        - name: Install required roles from requirements.yml
+          ansible.builtin.command: ansible-galaxy install -r "{{ playbook_dir }}/requirements.yml" -p "{{ playbook_dir }}/roles" --force
+          register: role_install_result
+          
+        - name: Debug role installation result
+          ansible.builtin.debug:
+            var: role_install_result
+            
+      rescue:
+        - name: Install andrewrothstein.opam role directly as fallback
+          ansible.builtin.command: ansible-galaxy install andrewrothstein.opam -p "{{ playbook_dir }}/roles" --force
+          
+    - name: Verify andrewrothstein.opam role was installed
+      ansible.builtin.stat:
+        path: "{{ playbook_dir }}/roles/andrewrothstein.opam"
+      register: opam_role_check
+      
+    - name: Show role directory contents for debugging
+      ansible.builtin.command: ls -la "{{ playbook_dir }}/roles/"
+      register: roles_dir_contents
+      
+    - name: Debug roles directory contents
+      ansible.builtin.debug:
+        var: roles_dir_contents.stdout_lines
+      
+    - name: Fail if andrewrothstein.opam role is not installed
+      ansible.builtin.fail:
+        msg: "andrewrothstein.opam role was not installed successfully"
+      when: not opam_role_check.stat.exists
+
+  tasks:
+    - name: Include base role
+      ansible.builtin.include_role:
+        name: base
+
+    - name: Include andrewrothstein.opam role
+      ansible.builtin.include_role:
+        name: andrewrothstein.opam
