@@ -223,3 +223,58 @@
   when: 
     - is_wsl.stdout == 'false'
     - desktop_check.stdout != ''
+
+- name: Remap Caps Lock to Escape in GNOME (for Ubuntu Desktop)
+  become: false
+  community.general.dconf:
+    key: "/org/gnome/desktop/input-sources/xkb-options"
+    value: "['caps:escape']"
+    state: present
+  when: 
+    - is_wsl.stdout == 'false'
+    - desktop_check.stdout != ''
+    - "'GNOME' in desktop_check.stdout or 'ubuntu' in desktop_check.stdout"
+  ignore_errors: yes
+
+- name: Create .xmodmap file for X11 sessions (fallback)
+  become: false
+  ansible.builtin.copy:
+    content: |
+      ! Remap Caps Lock to Escape
+      clear lock
+      clear control
+      keycode 66 = Escape NoSymbol Escape
+      keycode 9 = Caps_Lock NoSymbol Caps_Lock
+      add control = Control_L Control_R
+    dest: ~/.xmodmap
+    mode: '0644'
+  when: 
+    - is_wsl.stdout == 'false'
+    - desktop_check.stdout != ''
+
+- name: Create autostart directory
+  become: false
+  ansible.builtin.file:
+    path: ~/.config/autostart
+    state: directory
+    mode: '0755'
+  when: 
+    - is_wsl.stdout == 'false'
+    - desktop_check.stdout != ''
+
+- name: Create xmodmap autostart entry
+  become: false
+  ansible.builtin.copy:
+    content: |
+      [Desktop Entry]
+      Type=Application
+      Name=Xmodmap Caps Lock Remap
+      Exec=xmodmap ~/.xmodmap
+      Terminal=false
+      X-GNOME-Autostart-enabled=true
+      Comment=Remap Caps Lock to Escape on login
+    dest: ~/.config/autostart/xmodmap-capslock.desktop
+    mode: '0644'
+  when: 
+    - is_wsl.stdout == 'false'
+    - desktop_check.stdout != ''
