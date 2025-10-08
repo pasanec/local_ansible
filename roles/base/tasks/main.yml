@@ -189,3 +189,37 @@
     enabled: yes
     state: started
   when: is_wsl.stdout == 'false'
+
+- name: Check if desktop environment is installed
+  ansible.builtin.shell:
+    cmd: "echo $XDG_CURRENT_DESKTOP"
+  environment:
+    XDG_CURRENT_DESKTOP: "{{ ansible_env.XDG_CURRENT_DESKTOP | default('') }}"
+  register: desktop_check
+  changed_when: false
+  become: false
+
+- name: Download Google Chrome
+  ansible.builtin.get_url:
+    url: https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+    dest: /tmp/google-chrome-stable_current_amd64.deb
+    mode: '0644'
+  when: 
+    - is_wsl.stdout == 'false'
+    - desktop_check.stdout != ''
+
+- name: Install Google Chrome
+  apt:
+    deb: /tmp/google-chrome-stable_current_amd64.deb
+    state: present
+  when: 
+    - is_wsl.stdout == 'false'
+    - desktop_check.stdout != ''
+
+- name: Remove Chrome deb file
+  ansible.builtin.file:
+    path: /tmp/google-chrome-stable_current_amd64.deb
+    state: absent
+  when: 
+    - is_wsl.stdout == 'false'
+    - desktop_check.stdout != ''
