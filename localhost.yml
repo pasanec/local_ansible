@@ -1,21 +1,26 @@
 ---
-- hosts: all
+- hosts: localhost
+  connection: local
   become: true
-  pre_tasks:
 
-    - name: update repo index
+  pre_tasks:
+    - name: Update apt repo index
       tags: always
       apt:
         update_cache: yes
       changed_when: false
 
-    - name: Install role at specific path
+    - name: Ensure community.general collection is available
+      ansible.builtin.command: ansible-galaxy collection install community.general
+      args:
+        creates: ~/.ansible/collections/ansible_collections/community/general
+
+    - name: Install Galaxy roles from requirements (including andrewrothstein.opam)
       community.general.ansible_galaxy_install:
         type: role
         name: andrewrothstein.opam
+        dest: "{{ playbook_dir }}/roles"
 
-- hosts: all
-  become: true
   roles:
     - base
     - andrewrothstein.opam
