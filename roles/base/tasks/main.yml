@@ -35,7 +35,7 @@
   ansible.builtin.pip:
     name: grip
     state: present
-    extra_args: --user
+    extra_args: --user --break-system-packages
   when:
     - is_wsl.stdout == 'false'
     - desktop_check.stdout != ''
