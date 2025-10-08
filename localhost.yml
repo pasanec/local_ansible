@@ -2,6 +2,8 @@
 - hosts: localhost
   connection: local
   become: true
+  become_method: sudo
+  become_user: root
 
   pre_tasks:
     - name: Update apt repo index
