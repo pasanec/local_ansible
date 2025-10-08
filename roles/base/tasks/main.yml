@@ -11,8 +11,19 @@
       - build-essential
       - make
       - curl
+      - python3-pip
     state: latest
   when: ansible_distribution == "Ubuntu"
+
+- name: Install Grip markdown viewer (Ubuntu Desktop only)
+  become: false
+  ansible.builtin.pip:
+    name: grip
+    state: present
+    extra_args: --user
+  when:
+    - is_wsl.stdout == 'false'
+    - desktop_check.stdout != ''
 
 - name: Remove old neovim installations
   apt:
@@ -217,10 +228,9 @@
     update_cache: yes
 
 - name: Add user to docker group
-  ansible.builtin.user:
-    name: "{{ ansible_user_id }}"
-    groups: docker
-    append: yes
+  ansible.builtin.shell:
+    cmd: "usermod -aG docker {{ lookup('env', 'SUDO_USER') | default(lookup('env', 'USER'), true) }}"
+  changed_when: true
 
 - name: Ensure Docker service is enabled and started (skip in WSL)
   ansible.builtin.systemd:
@@ -323,6 +333,67 @@
       Comment=Remap Caps Lock to Escape on login
     dest: ~/.config/autostart/xmodmap-capslock.desktop
     mode: '0644'
+  when: 
+    - is_wsl.stdout == 'false'
+    - desktop_check.stdout != ''
+
+- name: Add Nextcloud desktop repository
+  apt_repository:
+    repo: ppa:nextcloud-devs/client
+    state: present
+  when: 
+    - is_wsl.stdout == 'false'
+    - desktop_check.stdout != ''
+
+- name: Install Nextcloud desktop client
+  apt:
+    name: nextcloud-desktop
+    state: latest
+    update_cache: yes
+  when: 
+    - is_wsl.stdout == 'false'
+    - desktop_check.stdout != ''
+
+- name: Add Element repository key
+  apt_key:
+    url: https://packages.element.io/debian/element-io-archive-keyring.gpg
+    state: present
+    keyring: /usr/share/keyrings/element-io-archive-keyring.gpg
+  when: 
+    - is_wsl.stdout == 'false'
+    - desktop_check.stdout != ''
+
+- name: Add Element repository
+  apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/element-io-archive-keyring.gpg] https://packages.element.io/debian/ default main"
+    state: present
+    filename: element-io
+  when: 
+    - is_wsl.stdout == 'false'
+    - desktop_check.stdout != ''
+
+- name: Install Element messenger
+  apt:
+    name: element-desktop
+    state: latest
+    update_cache: yes
+  when: 
+    - is_wsl.stdout == 'false'
+    - desktop_check.stdout != ''
+
+- name: Add Yubico PPA
+  apt_repository:
+    repo: ppa:yubico/stable
+    state: present
+  when: 
+    - is_wsl.stdout == 'false'
+    - desktop_check.stdout != ''
+
+- name: Install Yubico Authenticator
+  apt:
+    name: yubioath-desktop
+    state: latest
+    update_cache: yes
   when: 
     - is_wsl.stdout == 'false'
     - desktop_check.stdout != ''
