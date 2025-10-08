@@ -3,7 +3,7 @@
     name:
       - ripgrep
       - fd-find
-      - batcat
+      - bat
       - git
       - php
       - zip
