@@ -14,36 +14,17 @@
     state: latest
   when: ansible_distribution == "Ubuntu"
 
-- name: Check if neovim is already installed and get version
-  command: nvim --version
-  register: nvim_version_check
-  failed_when: false
-  changed_when: false
+- name: Add neovim PPA
+  apt_repository:
+    repo: ppa:neovim-ppa/stable
+    state: present
+    update_cache: yes
 
-- name: Install neovim from GitHub releases (latest stable)
-  block:
-    - name: Get latest neovim release info
-      uri:
-        url: https://api.github.com/repos/neovim/neovim/releases/latest
-        return_content: yes
-      register: nvim_latest_release
-
-    - name: Download latest neovim AppImage
-      get_url:
-        url: "{{ nvim_latest_release.json.assets | selectattr('name', 'equalto', 'nvim.appimage') | map(attribute='browser_download_url') | first }}"
-        dest: /usr/local/bin/nvim.appimage
-        mode: '0755'
-        owner: root
-        group: root
-
-    - name: Create nvim symlink
-      file:
-        src: /usr/local/bin/nvim.appimage
-        dest: /usr/local/bin/nvim
-        state: link
-        force: yes
-
-  when: nvim_version_check.rc != 0 or "'v0.9.' not in nvim_version_check.stdout"
+- name: Install neovim from PPA
+  apt:
+    name:
+      - neovim
+    state: latest
 
 - name: clone neovim configuration
   become: false
